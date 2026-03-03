@@ -17,57 +17,21 @@ class SearchViewModel: ObservableObject {
         errorMessage = nil
         result = nil
 
-        // --- Placeholder data (remove when API is ready) ---
-        // Search "empty" → safe result, anything else → flagged products list
-        try? await Task.sleep(nanoseconds: 600_000_000) // simulate network delay
-        if query.lowercased() == "empty" {
-            result = SearchResult(query: query, count: 0, results: [])
-        } else {
-            let placeholderProducts = [
-                Product(
-                    no: "1",
-                    namaProduk: "Krim Pemutih XYZ",
-                    nomorIzinEdar: "NA18201234567",
-                    kandunganBahanBerbahaya: "Merkuri, Hidroquinon",
-                    produsenPendaftar: "PT Contoh Kosmetik",
-                    nomorSuratPublicWarning: "KH.00.01.432.1234"
-                ),
-                Product(
-                    no: "2",
-                    namaProduk: "Serum Wajah Cerah ABC",
-                    nomorIzinEdar: "NA18209876543",
-                    kandunganBahanBerbahaya: "Retinoic Acid",
-                    produsenPendaftar: "CV Indah Skincare",
-                    nomorSuratPublicWarning: "KH.00.01.432.5678"
-                ),
-                Product(
-                    no: "3",
-                    namaProduk: "Lotion Tubuh Glowing 123",
-                    nomorIzinEdar: "NA18205556789",
-                    kandunganBahanBerbahaya: "Steroid, Timbal",
-                    produsenPendaftar: "UD Cantik Selalu",
-                    nomorSuratPublicWarning: "KH.00.01.432.9012"
-                )
-            ]
-            result = SearchResult(query: query, count: placeholderProducts.count, results: placeholderProducts)
+        guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "https://skinguard-api.oceandigital.id/api/products?q=\(encoded)") else {
+            errorMessage = "Invalid URL"
+            isLoading = false
+            return
         }
-        isLoading = false
 
-        // --- Real API call (uncomment when backend is ready) ---
-        // let baseURL = "http://43.157.208.56:9999/api/products"
-        // guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-        //       let url = URL(string: "\(baseURL)?q=\(encoded)") else {
-        //     errorMessage = "Invalid URL"
-        //     isLoading = false
-        //     return
-        // }
-        // do {
-        //     let (data, _) = try await URLSession.shared.data(from: url)
-        //     result = try JSONDecoder().decode(SearchResult.self, from: data)
-        // } catch {
-        //     errorMessage = error.localizedDescription
-        // }
-        // isLoading = false
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            result = try JSONDecoder().decode(SearchResult.self, from: data)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
     }
 }
 
