@@ -414,34 +414,73 @@ struct IngredientResultsView: View {
         NavigationStack {
             List {
 
-                // 1. Rekomendasi
+                // MARK: - Rekomendasi
                 Section("Rekomendasi") {
-                    HStack(spacing: 12) {
-                        Image(systemName: isRecommended ? "cart.badge.checkmark" : "cart.badge.minus")
-                            .font(.title2)
-                            .foregroundStyle(isRecommended ? .green : .red)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(isRecommended ? "Aman untuk Dibeli" : "Tidak Direkomendasikan")
-                                .font(.body.bold())
-                            ForEach(recommendationWarnings, id: \.self) { reason in
-                                Text(reason)
+                    if isRecommended {
+                        HStack(spacing: 10) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.title2)
+                                .foregroundStyle(.white)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Produk Aman Digunakan")
+                                    .font(.subheadline.bold())
+                                Text("Tidak ada bahan berbahaya ditemukan dari hasil analisis.")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .opacity(0.9)
                             }
+                            .foregroundStyle(.white)
                         }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(primaryColor)
+                        )
+                    } else {
+                        HStack(spacing: 12) {
+                            Image(systemName: "xmark.octagon.fill")
+                                .font(.title2)
+                                .foregroundStyle(.white)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Tidak Direkomendasikan")
+                                    .font(.subheadline.bold())
+                                ForEach(recommendationWarnings, id: \.self) { reason in
+                                    Text(reason)
+                                        .font(.caption)
+                                        .opacity(0.9)
+                                }
+                            }
+                            .foregroundStyle(.white)
+                        }
+                        .padding(16)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color.red)
+                        )
                     }
-                    .padding(.vertical, 4)
                 }
 
-                // 2. Aman untuk Ibu Hamil
+                // MARK: - Keamanan Ibu Hamil
                 Section("Keamanan Ibu Hamil") {
                     HStack(spacing: 12) {
-                        Image(systemName: isSafeForPregnancy ? "figure.maternity" : "exclamationmark.triangle.fill")
-                            .font(.title2)
-                            .foregroundStyle(isSafeForPregnancy ? .green : .orange)
+                        Image("pregnant_woman_icon")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 28, height: 28)   // ini penting
+                            .foregroundColor(isSafeForPregnancy ? primaryColor : .red)
+
                         VStack(alignment: .leading, spacing: 4) {
                             Text(isSafeForPregnancy ? "Aman untuk Ibu Hamil" : "Tidak Aman untuk Ibu Hamil")
                                 .font(.body.bold())
+
                             ForEach(pregnancyWarnings, id: \.self) { reason in
                                 Text(reason)
                                     .font(.caption)
@@ -452,68 +491,70 @@ struct IngredientResultsView: View {
                     .padding(.vertical, 4)
                 }
 
-                // 3. Daftar Bahan
-                if data.riskyIngredients.isEmpty {
-                    Section("Daftar Bahan") {
-                        VStack(spacing: 12) {
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 40))
-                                .foregroundStyle(.green)
-                            Text("Tidak ada bahan berbahaya ditemukan")
-                                .font(.headline)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical)
-                    }
-                } else {
+                // MARK: - Bahan Berbahaya (HANYA MUNCUL JIKA ADA)
+                if !data.riskyIngredients.isEmpty {
                     Section("Bahan Berbahaya (\(data.riskyIngredients.count))") {
                         ForEach(data.riskyIngredients) { ingredient in
                             DisclosureGroup {
                                 VStack(alignment: .leading, spacing: 8) {
+
                                     if !ingredient.aliases.isEmpty {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text("Juga dikenal sebagai")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
+
                                             Text(ingredient.aliases.joined(separator: ", "))
                                                 .font(.caption)
                                         }
                                     }
+
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Risiko")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
+
                                         Text(ingredient.risk)
                                             .font(.caption)
                                     }
+
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Alasan")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
+
                                         Text(ingredient.severityReason)
                                             .font(.caption)
                                     }
                                 }
                                 .padding(.vertical, 4)
                             } label: {
-                                Label(ingredient.name, systemImage: "exclamationmark.circle.fill")
-                                    .font(.body.bold())
-                                    .symbolRenderingMode(.palette)
-                                    .foregroundStyle(.red, .primary)
-                                    .padding(.vertical, 2)
+                                Label {
+                                    Text(ingredient.name)
+                                        .font(.body.bold())
+                                } icon: {
+                                    Image(systemName: "exclamationmark.circle.fill")
+                                        .symbolRenderingMode(.palette)
+                                        .foregroundStyle(.white, .red)
+                                }
+                                .padding(.vertical, 2)
                             }
                         }
                     }
                 }
 
+                // MARK: - Bahan Aman
                 if !data.safeIngredients.isEmpty {
                     Section("Bahan Aman (\(data.safeIngredients.count))") {
                         ForEach(data.safeIngredients, id: \.self) { ingredient in
-                            Label(ingredient, systemImage: "checkmark.circle.fill")
-                                .font(.subheadline)
-                                .symbolRenderingMode(.palette)
-                                .foregroundStyle(.green, .primary)
+                            Label {
+                                Text(ingredient)
+                                    .font(.subheadline)
+                            } icon: {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .symbolRenderingMode(.palette)
+                                    .foregroundStyle(.white, primaryColor)
+                            }
                         }
                     }
                 }
@@ -532,18 +573,20 @@ struct IngredientResultsView: View {
     }
 }
 
-
-// MARK: - UIImage Orientation Fix
-
 extension UIImage {
-    /// Redraws the image so cgImage pixel data matches the logical orientation.
-    /// Camera images are often stored rotated in cgImage — this fixes that.
+
+    /// Fix image orientation from camera
     func normalizedOrientation() -> UIImage {
-        guard imageOrientation != .up else { return self }
+
+        if imageOrientation == .up {
+            return self
+        }
+
         UIGraphicsBeginImageContextWithOptions(size, false, scale)
         draw(in: CGRect(origin: .zero, size: size))
-        let result = UIGraphicsGetImageFromCurrentImageContext() ?? self
+        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
-        return result
+
+        return normalizedImage ?? self
     }
 }
